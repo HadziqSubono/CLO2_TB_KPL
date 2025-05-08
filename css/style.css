@@ -1,0 +1,218 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+* {
+    margin: 0;
+}
+
+body {
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+    display: block;
+    max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+    font: inherit;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    overflow-wrap: break-word;
+}
+
+#root,
+#__next {
+    isolation: isolate;
+}
+
+@font-face {
+    font-family: 'RussoOne';
+    src: url('../fonts/RussoOne-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    font-family: 'RussoOne', sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: 'RussoOne', sans-serif;
+}
+
+p,
+span,
+div {
+    font-family: 'RussoOne', sans-serif;
+}
+
+.warna1 {
+    background-color: #EEEEEE;
+}
+
+.warna2 {
+    background-color: #686D76;
+}
+
+.warna3 {
+    background-color: #373A40;
+}
+
+.warna4 {
+    background-color: #DC5F00;
+}
+
+.nav-link {
+    color: #FFFFFF !important;
+    padding: 10px 15px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.nav-link:hover {
+    color: #FFD4BE !important;
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.banner {
+    height: 100vh;
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(../image/pixel-art-bongo-piano.gif);
+    /* background-size: contain;
+    background-position: center; */
+}
+
+.highlighted-kategori {
+    height: 250px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.kategori-1 {
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(../image/jujutsuKaisen-thumbnail.jpg);
+    background-size: cover;
+    background-position: center;
+}
+
+.kategori-2 {
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(../image/genshinImpact-thumbnail.jpg);
+    background-size: cover;
+    background-position: center;
+}
+
+.kategori-3 {
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(../image/demonSlayer-thumbnail.jpg);
+    background-size: cover;
+    background-position: center;
+}
+
+.highlighted-kategori:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.no-decoration {
+    text-decoration: none;
+    color: white;
+    transition: color 0.3s ease;
+}
+
+.no-decoration:hover {
+    color: #ee7474;
+}
+
+.text-harga {
+    font-size: 22px;
+    color: #CA965C;
+}
+
+.image-box {
+    height: 250px;
+}
+
+.image-box img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.content-subscribe {
+    background-color: #373A40;
+}
+
+.content-subscribe a {
+    color: #fff;
+}
+
+.banner2 {
+    height: 50vh;
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url(../image/pixel-art-bongo-piano.gif);
+    background-size: cover;
+    background-position: center;
+}
+
+.produk-terkait-image {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.btn {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.btn:hover {
+    background-color: #FFD4BE !important;
+    color: #000 !important;
+}
+
+.social-link {
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.element-animasi {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.scroll-down {
+    transform: translateY(100px);
+    opacity: 0;
+}
+
+.scroll-up {
+    transform: translateY(-100px);
+    opacity: 0;
+}
