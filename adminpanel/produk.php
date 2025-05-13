@@ -2,75 +2,51 @@
 require "session.php";
 require "../koneksi.php";
 
-// Fungsi untuk menghapus produk
-function hapusProduk($con, $id)
-{
-    $queryHapus = mysqli_query($con, "DELETE FROM produk WHERE id = '$id'");
-    return $queryHapus;
+// Fungsi generik: hapus data dari tabel manapun
+function hapusData($con, $table, $id) {
+    $stmt = $con->prepare("DELETE FROM $table WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    return $stmt->execute();
 }
 
-// Menghapus produk jika parameter action=hapus diterima dari URL
-if (isset($_GET['action']) && $_GET['action'] == 'hapus' && isset($_GET['id'])) {
-    $id_produk = $_GET['id'];
-    $hapus = hapusProduk($con, $id_produk);
-    if ($hapus) {
+// Fungsi generik: ambil data dengan join, where, dan parameter fleksibel
+function getData($con, $sql, $params = [], $types = '') {
+    $stmt = $con->prepare($sql);
+    if (!empty($params)) {
+        $stmt->bind_param($types, ...$params);
+    }
+    $stmt->execute();
+    return $stmt->get_result();
+}
+
+// Handle hapus produk
+if (isset($_GET['action']) && $_GET['action'] === 'hapus' && isset($_GET['id'])) {
+    $id_produk = (int) $_GET['id'];
+    if (hapusData($con, 'produk', $id_produk)) {
         $success_message = "Produk berhasil dihapus.";
     } else {
-        $error_message = "Gagal menghapus produk: " . mysqli_error($con);
+        $error_message = "Gagal menghapus produk: " . $con->error;
     }
 }
 
-// Mendapatkan kriteria dan arah pengurutan dari URL
-$sortCriteria = isset($_GET['sort']) ? $_GET['sort'] : 'nama';
-$sortDirection = isset($_GET['direction']) ? $_GET['direction'] : 'asc';
+// Validasi sorting
+$allowedSorts = ['nama', 'harga', 'nama_kategori', 'ketersediaan_stok'];
+$allowedDirections = ['asc', 'desc'];
+$sortCriteria = in_array($_GET['sort'] ?? '', $allowedSorts) ? $_GET['sort'] : 'nama';
+$sortDirection = in_array(strtolower($_GET['direction'] ?? ''), $allowedDirections) ? strtolower($_GET['direction']) : 'asc';
 
-// Query untuk mengambil data produk beserta nama kategorinya
-if (isset($_GET['keyword'])) {
-    $keyword = $_GET['keyword'];
-    $query = mysqli_query($con, "SELECT a.*, b.nama AS nama_kategori FROM produk a JOIN kategori b ON a.kategori_id = b.id WHERE a.nama LIKE '%$keyword%'");
-} else {
-    $query = mysqli_query($con, "SELECT a.*, b.nama AS nama_kategori FROM produk a JOIN kategori b ON a.kategori_id = b.id");
-}
+// Ambil data produk
+$keyword = $_GET['keyword'] ?? '';
+$sql = "SELECT a.*, b.nama AS nama_kategori FROM produk a JOIN kategori b ON a.kategori_id = b.id WHERE a.nama LIKE ? ORDER BY $sortCriteria $sortDirection";
+$result = getData($con, $sql, ["%$keyword%"], "s");
 
-// Menghitung jumlah produk
-$jumlahProduk = mysqli_num_rows($query);
-
-// Menyimpan data produk dalam array
-$produkArray = [];
-while ($data = mysqli_fetch_array($query)) {
-    $produkArray[] = $data;
-}
-
-// Fungsi Bubble Sort untuk mengurutkan data produk berdasarkan kriteria yang dipilih
-function bubble_sort(&$array, $key, $direction)
-{
-    $n = count($array);
-    for ($i = 0; $i < $n; $i++) {
-        for ($j = 0; $j < $n - $i - 1; $j++) {
-            if ($direction == 'asc') {
-                if ($array[$j][$key] > $array[$j + 1][$key]) {
-                    $temp = $array[$j];
-                    $array[$j] = $array[$j + 1];
-                    $array[$j + 1] = $temp;
-                }
-            } else {
-                if ($array[$j][$key] < $array[$j + 1][$key]) {
-                    $temp = $array[$j];
-                    $array[$j] = $array[$j + 1];
-                    $array[$j + 1] = $temp;
-                }
-            }
-        }
-    }
-}
-
-// Mengurutkan data produk berdasarkan kriteria yang dipilih
-bubble_sort($produkArray, $sortCriteria, $sortDirection);
+$produkArray = $result->fetch_all(MYSQLI_ASSOC);
+$jumlahProduk = count($produkArray);
 ?>
 
+<!-- HTML START -->
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -78,191 +54,89 @@ bubble_sort($produkArray, $sortCriteria, $sortDirection);
     <link rel="stylesheet" href="../bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="../fontawesome/css/fontawesome.min.css">
     <link rel="stylesheet" href="../css/style.css">
-    <style>
-    body {
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-    }
-
-    main {
-        flex: 1;
-        overflow-y: auto;
-    }
-
-    .no-decoration {
-        text-decoration: none;
-    }
-
-    form div {
-        margin-bottom: 10px;
-    }
-
-    .d-flex {
-        display: flex;
-    }
-
-    .align-items-center {
-        align-items: center;
-    }
-
-    .justify-content-between {
-        justify-content: space-between;
-    }
-
-    .me-2 {
-        margin-right: 0.5rem;
-    }
-
-    .form-select {
-        width: auto;
-    }
-    </style>
 </head>
-
 <body>
-    <?php require "navbar.php"; ?>
-    <div class="container mt-5">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item active" aria-current="page">
-                    <a href="../adminpanel/" class="no-decoration text-muted"><i class="fas fa-home"></i> Home</a>
-                </li>
-                <li class="breadcrumb-item active" aria-current="page">
-                    Produk
-                </li>
-            </ol>
-        </nav>
+<?php require "navbar.php"; ?>
+<div class="container mt-5">
+    <h2>List Produk</h2>
+    <p>Jumlah produk: <?= $jumlahProduk ?></p>
 
-        <!-- Daftar Produk -->
-        <div class="mt-5 mb-5">
-            <h2>List Produk</h2>
-            <p>Jumlah produk: <?php echo $jumlahProduk; ?></p>
-
-            <!-- Form Pencarian -->
-            <form action="produk.php" method="GET" class="my-3">
-                <div class="input-group">
-                    <input type="search" class="form-control" placeholder="Ketikkan nama produk"
-                        aria-label="Cari produk" aria-describedby="button-addon2" name="keyword">
-                    <button class="btn btn-outline-secondary" type="submit" id="button-addon2"><i
-                            class="fa-solid fa-magnifying-glass"></i></button>
-                </div>
-            </form>
-
-            <!-- Bagian Dropdown dan Tombol Tambah Produk -->
-            <div class="my-3 d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center">
-                    <label for="sortCriteria" class="me-2">Kategori:</label>
-                    <select id="sortCriteria" class="form-select me-2" onchange="sortProducts()">
-                        <option value="nama" <?php if ($sortCriteria == 'nama') echo 'selected'; ?>>Nama</option>
-                        <option value="harga" <?php if ($sortCriteria == 'harga') echo 'selected'; ?>>Harga</option>
-                        <option value="nama_kategori" <?php if ($sortCriteria == 'nama_kategori') echo 'selected'; ?>>
-                            Kategori</option>
-                        <option value="ketersediaan_stok"
-                            <?php if ($sortCriteria == 'ketersediaan_stok') echo 'selected'; ?>>Stok</option>
-                    </select>
-                    <label for="sortDirection" class="me-2">Sort by:</label>
-                    <i class="fa-solid fa-sort" id="sortIcon" onclick="toggleSortDirection()"></i>
-                </div>
-                <div>
-                    <a href="tambah-produk.php" class="btn btn-success"><i class="fas fa-plus-circle me-2"></i>Tambah
-                        Produk</a>
-                </div>
-            </div>
-
-            <!-- Pesan Sukses atau Error -->
-            <?php if (isset($success_message)) : ?>
-            <div class="alert alert-primary" role="alert">
-                <?php echo $success_message; ?>
-            </div>
-            <?php elseif (isset($error_message)) : ?>
-            <div class="alert alert-danger" role="alert">
-                <?php echo $error_message; ?>
-            </div>
-            <?php endif; ?>
-
-            <div class="table-responsive mt-5">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>No.</th>
-                            <th>Nama</th>
-                            <th>Kategori</th>
-                            <th>Harga</th>
-                            <th>Stok</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                        if ($jumlahProduk == 0) {
-                        ?>
-                        <tr>
-                            <td colspan="6" class="text-center">Data produk tidak tersedia</td>
-                        </tr>
-                        <?php
-                        } else {
-                            $nomor = 1;
-                            foreach ($produkArray as $data) {
-                            ?>
-                        <tr>
-                            <td><?php echo $nomor; ?></td>
-                            <td><?php echo $data['nama']; ?></td>
-                            <td><?php echo $data['nama_kategori']; ?></td>
-                            <td>Rp <?php echo number_format($data['harga'], 0, ',', '.'); ?></td>
-                            <td><?php echo $data['ketersediaan_stok']; ?></td>
-                            <td>
-                                <a href="produk-detail.php?id=<?php echo $data['id']; ?>" class="btn btn-info btn-sm"><i
-                                        class="fa-solid fa-pen me-1"></i>Ubah</a>
-                                <a href="produk.php?action=hapus&id=<?php echo $data['id']; ?>"
-                                    class="btn btn-danger btn-sm"
-                                    onclick="return confirm('Anda yakin ingin menghapus produk ini?');"><i
-                                        class="fa-solid fa-trash me-1"></i>Hapus</a>
-                            </td>
-                        </tr>
-                        <?php
-                                $nomor++;
-                            }
-                        }
-                        ?>
-                    </tbody>
-                </table>
-            </div>
+    <!-- Pencarian -->
+    <form action="produk.php" method="GET" class="my-3">
+        <div class="input-group">
+            <input type="search" class="form-control" placeholder="Cari produk" name="keyword" value="<?= htmlspecialchars($keyword) ?>">
+            <button class="btn btn-outline-secondary" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
         </div>
+    </form>
+
+    <!-- Sort & Tambah -->
+    <div class="d-flex justify-content-between my-3">
+        <div>
+            <select id="sortCriteria" onchange="sortProducts()">
+                <?php foreach ($allowedSorts as $sort) : ?>
+                    <option value="<?= $sort ?>" <?= $sortCriteria === $sort ? 'selected' : '' ?>><?= ucfirst($sort) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <button onclick="toggleSortDirection()">
+                <?= strtoupper($sortDirection) ?>
+            </button>
+        </div>
+        <a href="tambah-produk.php" class="btn btn-success">Tambah Produk</a>
     </div>
 
-    <!-- Footer -->
-    <?php require "footer.php"; ?>
-    <script src="../bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="../fontawesome/js/all.min.js"></script>
-    <script>
-    function sortProducts() {
-        const criteria = document.getElementById('sortCriteria').value;
-        const direction = document.getElementById('sortIcon').classList.contains('asc') ? 'asc' : 'desc';
-        window.location.href = `produk.php?sort=${criteria}&direction=${direction}`;
-    }
+    <!-- Pesan -->
+    <?php if (isset($success_message)) : ?>
+        <div class="alert alert-success"> <?= $success_message ?> </div>
+    <?php elseif (isset($error_message)) : ?>
+        <div class="alert alert-danger"> <?= $error_message ?> </div>
+    <?php endif; ?>
 
-    function toggleSortDirection() {
-        const sortIcon = document.getElementById('sortIcon');
-        if (sortIcon.classList.contains('asc')) {
-            sortIcon.classList.remove('asc');
-            sortIcon.classList.add('desc');
-        } else {
-            sortIcon.classList.remove('desc');
-            sortIcon.classList.add('asc');
-        }
-        sortProducts();
-    }
+    <!-- Tabel -->
+    <table class="table">
+        <thead>
+        <tr>
+            <th>No.</th>
+            <th>Nama</th>
+            <th>Kategori</th>
+            <th>Harga</th>
+            <th>Stok</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        <?php if ($jumlahProduk === 0) : ?>
+            <tr><td colspan="6" class="text-center">Tidak ada data</td></tr>
+        <?php else : $no = 1; foreach ($produkArray as $data) : ?>
+            <tr>
+                <td><?= $no++ ?></td>
+                <td><?= htmlspecialchars($data['nama']) ?></td>
+                <td><?= htmlspecialchars($data['nama_kategori']) ?></td>
+                <td>Rp <?= number_format($data['harga'], 0, ',', '.') ?></td>
+                <td><?= $data['ketersediaan_stok'] ?></td>
+                <td>
+                    <a href="produk-detail.php?id=<?= $data['id'] ?>" class="btn btn-info btn-sm">Ubah</a>
+                    <a href="produk.php?action=hapus&id=<?= $data['id'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('Yakin hapus?');">Hapus</a>
+                </td>
+            </tr>
+        <?php endforeach; endif; ?>
+        </tbody>
+    </table>
+</div>
 
-    // Set default sort direction
-    const currentDirection = "<?php echo $sortDirection; ?>";
-    const sortIcon = document.getElementById('sortIcon');
-    if (currentDirection === 'asc') {
-        sortIcon.classList.add('asc');
-    } else {
-        sortIcon.classList.add('desc');
-    }
-    </script>
+<script>
+function sortProducts() {
+    const criteria = document.getElementById('sortCriteria').value;
+    const direction = '<?= $sortDirection ?>';
+    window.location.href = `produk.php?sort=${criteria}&direction=${direction}`;
+}
+function toggleSortDirection() {
+    const current = '<?= $sortDirection ?>';
+    const newDirection = current === 'asc' ? 'desc' : 'asc';
+    const criteria = document.getElementById('sortCriteria').value;
+    window.location.href = `produk.php?sort=${criteria}&direction=${newDirection}`;
+}
+</script>
+<script src="../bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="../fontawesome/js/all.min.js"></script>
 </body>
-
 </html>

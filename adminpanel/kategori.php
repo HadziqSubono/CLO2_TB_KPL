@@ -22,10 +22,6 @@ if (isset($_GET['action']) && $_GET['action'] == 'hapus' && isset($_GET['id'])) 
     }
 }
 
-// Query untuk mengambil semua kategori
-$queryKategori = mysqli_query($con, "SELECT * FROM kategori");
-$jumlahKategori = mysqli_num_rows($queryKategori);
-
 // Proses simpan kategori baru
 if (isset($_POST['simpan_kategori'])) {
     $kategori = htmlspecialchars($_POST['kategori']);
@@ -49,6 +45,18 @@ if (isset($_POST['simpan_kategori'])) {
             $alertType = "danger";
         }
     }
+}
+
+// Query untuk mengambil semua kategori lalu disimpan ke array (Table-driven approach)
+$queryKategori = mysqli_query($con, "SELECT * FROM kategori");
+$kategoriData = [];
+while ($row = mysqli_fetch_assoc($queryKategori)) {
+    $kategoriData[] = [
+        'id' => $row['id'],
+        'nama' => $row['nama'],
+        'edit_url' => "kategori-detail.php?id=" . $row['id'],
+        'hapus_url' => "kategori.php?action=hapus&id=" . $row['id']
+    ];
 }
 ?>
 
@@ -124,7 +132,7 @@ if (isset($_POST['simpan_kategori'])) {
             <div class="col-md-6">
                 <h3>List Kategori</h3>
 
-                <?php if ($jumlahKategori == 0) { ?>
+                <?php if (count($kategoriData) === 0) { ?>
                     <p>Data kategori tidak tersedia.</p>
                 <?php } else { ?>
                     <div class="table-responsive mt-3">
@@ -137,21 +145,16 @@ if (isset($_POST['simpan_kategori'])) {
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php
-                                $nomor = 1;
-                                while ($data = mysqli_fetch_array($queryKategori)) {
-                                ?>
+                                <?php foreach ($kategoriData as $index => $kategori) { ?>
                                     <tr>
-                                        <td><?php echo $nomor++; ?></td>
-                                        <td><?php echo $data['nama']; ?></td>
+                                        <td><?php echo $index + 1; ?></td>
+                                        <td><?php echo htmlspecialchars($kategori['nama']); ?></td>
                                         <td class="d-flex gap-2">
-                                            <a href="kategori-detail.php?id=<?php echo $data['id']; ?>" class="btn btn-info btn-sm"><i class="fa-solid fa-pen me-1"></i>Ubah</a>
-                                            <a href="kategori.php?action=hapus&id=<?php echo $data['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Anda yakin ingin menghapus kategori ini?');"><i class="fa-solid fa-trash me-1"></i>Hapus</a>
+                                            <a href="<?php echo $kategori['edit_url']; ?>" class="btn btn-info btn-sm"><i class="fa-solid fa-pen me-1"></i>Ubah</a>
+                                            <a href="<?php echo $kategori['hapus_url']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Anda yakin ingin menghapus kategori ini?');"><i class="fa-solid fa-trash me-1"></i>Hapus</a>
                                         </td>
                                     </tr>
-                                <?php
-                                }
-                                ?>
+                                <?php } ?>
                             </tbody>
                         </table>
                     </div>

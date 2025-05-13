@@ -1,3 +1,7 @@
+<?php
+require_once 'language.php';
+?>
+
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
     <div class="container d-flex justify-content-between">
         <!-- Identitas Toko -->
