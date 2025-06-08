@@ -22,7 +22,6 @@
     </div>
 
     <!-- main -->
-    <!-- main -->
     <div class="container-fluid py-5">
         <div class="container fs-5 text-center">
             <p>Selamat datang di Toko Vandesu, tempatnya segala kebutuhan para penggemar anime! Kami menawarkan berbagai
@@ -36,7 +35,6 @@
                 di sini!</p>
         </div>
     </div>
-
 
     <!-- footer -->
     <?php require "footer.php"; ?>
